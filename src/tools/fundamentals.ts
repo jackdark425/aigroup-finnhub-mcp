@@ -18,7 +18,10 @@ export async function getBasicFinancials(args: unknown): Promise<ToolResult> {
     const data = await fundamentals.getBasicFinancials(symbol, metricType);
     return createSuccessResult(data);
   } catch (error) {
-    logger.error('Error:', error);
+    logger.error('Error getting basic financials:', error);
+    if (error instanceof z.ZodError) {
+      return createErrorResult(`Validation error: ${error.errors.map((e: z.ZodIssue) => e.message).join(', ')}`);
+    }
     return createErrorResult(error instanceof Error ? error.message : 'Unknown error');
   }
 }
@@ -30,7 +33,10 @@ export async function getFinancialsAsReported(args: unknown): Promise<ToolResult
     const data = await fundamentals.getFinancialsAsReported(symbol, freq);
     return createSuccessResult(data);
   } catch (error) {
-    logger.error('Error:', error);
+    logger.error('Error getting financials as reported:', error);
+    if (error instanceof z.ZodError) {
+      return createErrorResult(`Validation error: ${error.errors.map((e: z.ZodIssue) => e.message).join(', ')}`);
+    }
     return createErrorResult(error instanceof Error ? error.message : 'Unknown error');
   }
 }
@@ -42,7 +48,10 @@ export async function getDividends(args: unknown): Promise<ToolResult> {
     const data = await fundamentals.getDividends(symbol, from, to);
     return createSuccessResult(data);
   } catch (error) {
-    logger.error('Error:', error);
+    logger.error('Error getting dividends:', error);
+    if (error instanceof z.ZodError) {
+      return createErrorResult(`Validation error: ${error.errors.map((e: z.ZodIssue) => e.message).join(', ')}`);
+    }
     return createErrorResult(error instanceof Error ? error.message : 'Unknown error');
   }
 }
@@ -54,7 +63,10 @@ export async function getStockSplits(args: unknown): Promise<ToolResult> {
     const data = await fundamentals.getStockSplits(symbol, from, to);
     return createSuccessResult(data);
   } catch (error) {
-    logger.error('Error:', error);
+    logger.error('Error getting stock splits:', error);
+    if (error instanceof z.ZodError) {
+      return createErrorResult(`Validation error: ${error.errors.map((e: z.ZodIssue) => e.message).join(', ')}`);
+    }
     return createErrorResult(error instanceof Error ? error.message : 'Unknown error');
   }
 }
@@ -66,7 +78,10 @@ export async function getRevenueBreakdown(args: unknown): Promise<ToolResult> {
     const data = await fundamentals.getRevenueBreakdown(symbol);
     return createSuccessResult(data);
   } catch (error) {
-    logger.error('Error:', error);
+    logger.error('Error getting revenue breakdown:', error);
+    if (error instanceof z.ZodError) {
+      return createErrorResult(`Validation error: ${error.errors.map((e: z.ZodIssue) => e.message).join(', ')}`);
+    }
     return createErrorResult(error instanceof Error ? error.message : 'Unknown error');
   }
 }

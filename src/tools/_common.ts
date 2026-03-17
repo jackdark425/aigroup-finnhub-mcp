@@ -69,7 +69,7 @@ export function validateResolution(resolution: string): string {
 }
 
 // Common schemas
-export const SymbolSchema = z.string().min(1).transform(s => s.toUpperCase());
+export const SymbolSchema = z.string().min(1).transform((s: string) => s.toUpperCase());
 
 export const ResolutionSchema = z.enum(['1', '5', '15', '30', '60', 'D', 'W', 'M']);
 

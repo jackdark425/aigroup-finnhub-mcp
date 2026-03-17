@@ -84,7 +84,7 @@ export async function getTechnicalIndicator(args: unknown): Promise<ToolResult> 
   } catch (error) {
     logger.error('Error getting technical indicator:', error);
     if (error instanceof z.ZodError) {
-      return createErrorResult(`Validation error: ${error.errors.map(e => e.message).join(', ')}`);
+      return createErrorResult(`Validation error: ${error.errors.map((e: z.ZodIssue) => e.message).join(', ')}`);
     }
     return createErrorResult(error instanceof Error ? error.message : 'Unknown error');
   }
@@ -100,7 +100,7 @@ export async function getAggregateSignals(args: unknown): Promise<ToolResult> {
   } catch (error) {
     logger.error('Error getting aggregate signals:', error);
     if (error instanceof z.ZodError) {
-      return createErrorResult(`Validation error: ${error.errors.map(e => e.message).join(', ')}`);
+      return createErrorResult(`Validation error: ${error.errors.map((e: z.ZodIssue) => e.message).join(', ')}`);
     }
     return createErrorResult(error instanceof Error ? error.message : 'Unknown error');
   }
@@ -116,7 +116,7 @@ export async function getPatternRecognition(args: unknown): Promise<ToolResult> 
   } catch (error) {
     logger.error('Error getting pattern recognition:', error);
     if (error instanceof z.ZodError) {
-      return createErrorResult(`Validation error: ${error.errors.map(e => e.message).join(', ')}`);
+      return createErrorResult(`Validation error: ${error.errors.map((e: z.ZodIssue) => e.message).join(', ')}`);
     }
     return createErrorResult(error instanceof Error ? error.message : 'Unknown error');
   }
@@ -132,7 +132,7 @@ export async function getSupportResistance(args: unknown): Promise<ToolResult> {
   } catch (error) {
     logger.error('Error getting support/resistance:', error);
     if (error instanceof z.ZodError) {
-      return createErrorResult(`Validation error: ${error.errors.map(e => e.message).join(', ')}`);
+      return createErrorResult(`Validation error: ${error.errors.map((e: z.ZodIssue) => e.message).join(', ')}`);
     }
     return createErrorResult(error instanceof Error ? error.message : 'Unknown error');
   }

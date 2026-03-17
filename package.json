@@ -1,6 +1,6 @@
 {
   "name": "aigroup-finnhub-mcp",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Node.js MCP server for Finnhub financial data API",
   "type": "module",
   "main": "dist/index.js",
@@ -16,6 +16,11 @@
     "lint": "eslint src/**/*.ts",
     "typecheck": "tsc --noEmit"
   },
+  "files": [
+    "dist/**/*",
+    "README.md",
+    "LICENSE"
+  ],
   "keywords": ["mcp", "finnhub", "finance", "stocks", "api"],
   "author": "",
   "license": "MIT",

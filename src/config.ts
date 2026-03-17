@@ -207,5 +207,6 @@ export function getConfig(): Config {
 }
 
 export function isToolEnabled(toolName: keyof ToolConfig): boolean {
-  return config.get(`tools.${toolName}`) as boolean;
+  const cfg = config.get() as Config;
+  return cfg.tools[toolName] as boolean;
 }

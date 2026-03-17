@@ -62,7 +62,7 @@ export const cryptoDataTool = {
   name: 'finnhub_crypto_data',
   description: 'Access cryptocurrency market data',
   operations: [
-    { name: 'get_exchanges', description: 'Get list of crypto exchanges', parameters: { type: 'object', properties: {} } },
+    { name: 'get_exchanges', description: 'Get list of crypto exchanges', parameters: { type: 'object', properties: {}, required: [] } },
     { name: 'get_symbols', description: 'Get available crypto symbols', parameters: { type: 'object', properties: { exchange: { type: 'string' } }, required: ['exchange'] } },
     { name: 'get_quote', description: 'Get crypto quote', parameters: { type: 'object', properties: { symbol: { type: 'string' } }, required: ['symbol'] } },
     { name: 'get_candles', description: 'Get crypto OHLCV data', parameters: { type: 'object', properties: { symbol: { type: 'string' }, resolution: { type: 'string', enum: ['1', '5', '15', '30', '60', 'D', 'W', 'M'] }, days: { type: 'number', default: 30 } }, required: ['symbol', 'resolution'] } },

@@ -1,4 +1,4 @@
-import axios, { AxiosInstance, AxiosError, AxiosRequestConfig } from 'axios';
+import axios, { AxiosInstance, AxiosError, AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 import { getConfig } from '../config.js';
 import { getLogger } from '../utils/logger.js';
 import { RateLimitError, AuthenticationError, handleApiError } from './errors.js';
@@ -36,23 +36,23 @@ export class FinnhubClient {
 
     // Add request interceptor for authentication
     this.client.interceptors.request.use(
-      (config) => {
+      (config: InternalAxiosRequestConfig) => {
         this.checkRateLimit();
         const appConfig = getConfig();
         if (appConfig.finnhub.apiKey) {
           config.params = {
-            ...config.params,
+            ...(config.params as Record<string, unknown>),
             token: appConfig.finnhub.apiKey,
           };
         }
         return config;
       },
-      (error) => Promise.reject(error)
+      (error: AxiosError) => Promise.reject(error)
     );
 
     // Add response interceptor for error handling
     this.client.interceptors.response.use(
-      (response) => response,
+      (response: AxiosResponse) => response,
       async (error: AxiosError) => {
         if (error.response?.status === 429) {
           throw new RateLimitError();
@@ -78,12 +78,8 @@ export class FinnhubClient {
       const waitTime = Math.ceil((1 - this.bucket.tokens) / refillRate * 1000);
       logger.warn(`Rate limit approached, waiting ${waitTime}ms`);
       
-      // Simple blocking wait for demo purposes
-      const start = Date.now();
-      while (Date.now() - start < waitTime) {
-        // Busy wait
-      }
-      this.bucket.tokens = 1;
+      // Mark that we need to wait - actual wait happens in request method
+      this.bucket.tokens = 0;
     }
 
     this.bucket.tokens -= 1;

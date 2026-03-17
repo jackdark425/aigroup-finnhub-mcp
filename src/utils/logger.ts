@@ -15,6 +15,6 @@ export const logger = pino({
   },
 });
 
-export function getLogger(name: string) {
+export function getLogger(name: string): pino.Logger {
   return logger.child({ component: name });
 }

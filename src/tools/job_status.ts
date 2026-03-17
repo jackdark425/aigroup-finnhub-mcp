@@ -58,6 +58,7 @@ export function updateJobStatus(
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/require-await
 export async function getJobStatus(args: unknown): Promise<ToolResult> {
   try {
     const { job_id } = GetJobStatusSchema.parse(args);
@@ -72,7 +73,7 @@ export async function getJobStatus(args: unknown): Promise<ToolResult> {
   } catch (error) {
     logger.error('Error getting job status:', error);
     if (error instanceof z.ZodError) {
-      return createErrorResult(`Validation error: ${error.errors.map(e => e.message).join(', ')}`);
+      return createErrorResult(`Validation error: ${error.errors.map((e: z.ZodIssue) => e.message).join(', ')}`);
     }
     return createErrorResult(error instanceof Error ? error.message : 'Unknown error');
   }

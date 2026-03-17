@@ -55,7 +55,7 @@ function registerToolOperations(
         required: ['operation'],
       },
     },
-    handler: async (args: unknown) => {
+    handler: async (args: unknown): Promise<unknown> => {
       const { operation, ...params } = args as { operation: string };
       const handler = operationHandlers[operation];
       if (!handler) {
@@ -218,7 +218,7 @@ export function createServer(): Server {
   );
 
   // List available tools
-  server.setRequestHandler(ListToolsRequestSchema, async () => {
+  server.setRequestHandler(ListToolsRequestSchema, () => {
     return {
       tools: Object.values(toolRegistry).map(t => t.definition),
     };

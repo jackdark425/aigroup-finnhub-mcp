@@ -30,7 +30,7 @@ export async function createProject(args: unknown): Promise<ToolResult> {
   } catch (error) {
     logger.error('Error creating project:', error);
     if (error instanceof z.ZodError) {
-      return createErrorResult(`Validation error: ${error.errors.map(e => e.message).join(', ')}`);
+      return createErrorResult(`Validation error: ${error.errors.map((e: z.ZodIssue) => e.message).join(', ')}`);
     }
     return createErrorResult(error instanceof Error ? error.message : 'Unknown error');
   }

@@ -74,7 +74,8 @@ export class FileStorage {
           try {
             const metadataPath = join(this.baseDir, entry.name, '.project.json');
             const content = await fs.readFile(metadataPath, 'utf-8');
-            const metadata: ProjectMetadata = JSON.parse(content);
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+            const metadata: ProjectMetadata = JSON.parse(content) as ProjectMetadata;
             projects.push({
               name: metadata.name,
               createdAt: metadata.created_at,
@@ -113,7 +114,8 @@ export class FileStorage {
   async readFile(projectName: string, subdir: string, filename: string): Promise<unknown> {
     const filePath = join(this.baseDir, projectName, subdir, filename);
     const content = await fs.readFile(filePath, 'utf-8');
-    return JSON.parse(content);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    return JSON.parse(content) as unknown;
   }
 }
 
