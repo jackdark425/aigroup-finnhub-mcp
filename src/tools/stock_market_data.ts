@@ -2,7 +2,7 @@ import { z } from 'zod';
 import * as market from '../api/endpoints/market.js';
 import { getLogger } from '../utils/logger.js';
 import {
-  createSuccessResult,
+  createSmartResult,
   createErrorResult,
   SymbolSchema,
   getUnixDaysAgo,
@@ -15,6 +15,8 @@ const logger = getLogger('StockMarketDataTool');
 // Operation schemas
 const GetQuoteSchema = z.object({
   symbol: SymbolSchema,
+  project: z.string().optional(),
+  export: z.boolean().optional(),
 });
 
 const GetCandlesSchema = z.object({
@@ -23,37 +25,54 @@ const GetCandlesSchema = z.object({
   from: z.number().optional(),
   to: z.number().optional(),
   days: z.number().default(30),
+  project: z.string().optional(),
+  export: z.boolean().optional(),
 });
 
 const GetCompanyProfileSchema = z.object({
   symbol: SymbolSchema,
+  project: z.string().optional(),
+  export: z.boolean().optional(),
 });
 
 const SymbolLookupSchema = z.object({
   query: z.string().min(1),
+  project: z.string().optional(),
+  export: z.boolean().optional(),
 });
 
 const GetBasicFinancialsSchema = z.object({
   symbol: SymbolSchema,
   metricType: z.enum(['all', 'price', 'valuation', 'growth']).default('all'),
+  project: z.string().optional(),
+  export: z.boolean().optional(),
 });
 
 const GetFinancialsAsReportedSchema = z.object({
   symbol: SymbolSchema,
   freq: z.enum(['annual', 'quarterly']).default('annual'),
+  project: z.string().optional(),
+  export: z.boolean().optional(),
 });
 
 const GetEarningsSurprisesSchema = z.object({
   symbol: SymbolSchema,
+  project: z.string().optional(),
+  export: z.boolean().optional(),
 });
 
 export async function getQuote(args: unknown): Promise<ToolResult> {
   try {
-    const { symbol } = GetQuoteSchema.parse(args);
+    const { symbol, project, export: forceExport } = GetQuoteSchema.parse(args);
     logger.info(`Getting quote for ${symbol}`);
     
     const data = await market.getQuote(symbol);
-    return createSuccessResult(data);
+    return createSmartResult(data, {
+      project,
+      export: forceExport,
+      subdir: 'market-data',
+      filename: `${symbol.toLowerCase()}-quote.json`,
+    });
   } catch (error) {
     logger.error('Error getting quote:', error);
     if (error instanceof z.ZodError) {
@@ -65,7 +84,7 @@ export async function getQuote(args: unknown): Promise<ToolResult> {
 
 export async function getCandles(args: unknown): Promise<ToolResult> {
   try {
-    const { symbol, resolution, days } = GetCandlesSchema.parse(args);
+    const { symbol, resolution, days, project, export: forceExport } = GetCandlesSchema.parse(args);
     let { from, to } = GetCandlesSchema.parse(args);
     
     // Set default date range if not provided
@@ -82,7 +101,12 @@ export async function getCandles(args: unknown): Promise<ToolResult> {
       return createErrorResult('No data available for the specified period');
     }
     
-    return createSuccessResult(data);
+    return createSmartResult(data, {
+      project,
+      export: forceExport,
+      subdir: 'market-data',
+      filename: `${symbol.toLowerCase()}-candles-${resolution}.json`,
+    });
   } catch (error) {
     logger.error('Error getting candles:', error);
     if (error instanceof z.ZodError) {
@@ -94,11 +118,16 @@ export async function getCandles(args: unknown): Promise<ToolResult> {
 
 export async function getCompanyProfile(args: unknown): Promise<ToolResult> {
   try {
-    const { symbol } = GetCompanyProfileSchema.parse(args);
+    const { symbol, project, export: forceExport } = GetCompanyProfileSchema.parse(args);
     logger.info(`Getting company profile for ${symbol}`);
     
     const data = await market.getCompanyProfile(symbol);
-    return createSuccessResult(data);
+    return createSmartResult(data, {
+      project,
+      export: forceExport,
+      subdir: 'market-data',
+      filename: `${symbol.toLowerCase()}-profile.json`,
+    });
   } catch (error) {
     logger.error('Error getting company profile:', error);
     if (error instanceof z.ZodError) {
@@ -110,11 +139,16 @@ export async function getCompanyProfile(args: unknown): Promise<ToolResult> {
 
 export async function symbolLookup(args: unknown): Promise<ToolResult> {
   try {
-    const { query } = SymbolLookupSchema.parse(args);
+    const { query, project, export: forceExport } = SymbolLookupSchema.parse(args);
     logger.info(`Looking up symbols for: ${query}`);
     
     const data = await market.symbolLookup(query);
-    return createSuccessResult(data);
+    return createSmartResult(data, {
+      project,
+      export: forceExport,
+      subdir: 'market-data',
+      filename: `lookup-${query.toLowerCase().replace(/\s+/g, '-')}.json`,
+    });
   } catch (error) {
     logger.error('Error looking up symbol:', error);
     if (error instanceof z.ZodError) {
@@ -126,11 +160,16 @@ export async function symbolLookup(args: unknown): Promise<ToolResult> {
 
 export async function getBasicFinancials(args: unknown): Promise<ToolResult> {
   try {
-    const { symbol, metricType } = GetBasicFinancialsSchema.parse(args);
+    const { symbol, metricType, project, export: forceExport } = GetBasicFinancialsSchema.parse(args);
     logger.info(`Getting basic financials for ${symbol} (${metricType})`);
     
     const data = await market.getBasicFinancials(symbol, metricType);
-    return createSuccessResult(data);
+    return createSmartResult(data, {
+      project,
+      export: forceExport,
+      subdir: 'fundamentals',
+      filename: `${symbol.toLowerCase()}-financials-${metricType}.json`,
+    });
   } catch (error) {
     logger.error('Error getting basic financials:', error);
     if (error instanceof z.ZodError) {
@@ -142,11 +181,16 @@ export async function getBasicFinancials(args: unknown): Promise<ToolResult> {
 
 export async function getFinancialsAsReported(args: unknown): Promise<ToolResult> {
   try {
-    const { symbol, freq } = GetFinancialsAsReportedSchema.parse(args);
+    const { symbol, freq, project, export: forceExport } = GetFinancialsAsReportedSchema.parse(args);
     logger.info(`Getting financials as reported for ${symbol} (${freq})`);
     
     const data = await market.getFinancialsAsReported(symbol, freq);
-    return createSuccessResult(data);
+    return createSmartResult(data, {
+      project,
+      export: forceExport,
+      subdir: 'fundamentals',
+      filename: `${symbol.toLowerCase()}-financials-reported-${freq}.json`,
+    });
   } catch (error) {
     logger.error('Error getting financials as reported:', error);
     if (error instanceof z.ZodError) {
@@ -158,11 +202,16 @@ export async function getFinancialsAsReported(args: unknown): Promise<ToolResult
 
 export async function getEarningsSurprises(args: unknown): Promise<ToolResult> {
   try {
-    const { symbol } = GetEarningsSurprisesSchema.parse(args);
+    const { symbol, project, export: forceExport } = GetEarningsSurprisesSchema.parse(args);
     logger.info(`Getting earnings surprises for ${symbol}`);
     
     const data = await market.getEarningsSurprises(symbol);
-    return createSuccessResult(data);
+    return createSmartResult(data, {
+      project,
+      export: forceExport,
+      subdir: 'fundamentals',
+      filename: `${symbol.toLowerCase()}-earnings-surprises.json`,
+    });
   } catch (error) {
     logger.error('Error getting earnings surprises:', error);
     if (error instanceof z.ZodError) {
@@ -175,7 +224,7 @@ export async function getEarningsSurprises(args: unknown): Promise<ToolResult> {
 // Tool definition for MCP
 export const stockMarketDataTool = {
   name: 'finnhub_stock_market_data',
-  description: 'Access stock market data including real-time quotes, historical candles, company profiles, and financial data',
+  description: 'Access stock market data including real-time quotes, historical candles, company profiles, and financial data. Supports JSON export for large datasets.',
   operations: [
     {
       name: 'get_quote',
@@ -184,6 +233,8 @@ export const stockMarketDataTool = {
         type: 'object',
         properties: {
           symbol: { type: 'string', description: 'Stock symbol (e.g., AAPL)' },
+          project: { type: 'string', description: 'Project name for saving data' },
+          export: { type: 'boolean', description: 'Force export to JSON file' },
         },
         required: ['symbol'],
       },
@@ -199,6 +250,8 @@ export const stockMarketDataTool = {
           from: { type: 'number', description: 'Unix timestamp (optional)' },
           to: { type: 'number', description: 'Unix timestamp (optional)' },
           days: { type: 'number', default: 30, description: 'Number of days to fetch (if from/to not provided)' },
+          project: { type: 'string', description: 'Project name for saving data' },
+          export: { type: 'boolean', description: 'Force export to JSON file' },
         },
         required: ['symbol', 'resolution'],
       },
@@ -210,6 +263,8 @@ export const stockMarketDataTool = {
         type: 'object',
         properties: {
           symbol: { type: 'string', description: 'Stock symbol' },
+          project: { type: 'string', description: 'Project name for saving data' },
+          export: { type: 'boolean', description: 'Force export to JSON file' },
         },
         required: ['symbol'],
       },
@@ -221,6 +276,8 @@ export const stockMarketDataTool = {
         type: 'object',
         properties: {
           query: { type: 'string', description: 'Search query' },
+          project: { type: 'string', description: 'Project name for saving data' },
+          export: { type: 'boolean', description: 'Force export to JSON file' },
         },
         required: ['query'],
       },
@@ -233,6 +290,8 @@ export const stockMarketDataTool = {
         properties: {
           symbol: { type: 'string', description: 'Stock symbol' },
           metricType: { type: 'string', enum: ['all', 'price', 'valuation', 'growth'], default: 'all' },
+          project: { type: 'string', description: 'Project name for saving data' },
+          export: { type: 'boolean', description: 'Force export to JSON file' },
         },
         required: ['symbol'],
       },
@@ -245,6 +304,8 @@ export const stockMarketDataTool = {
         properties: {
           symbol: { type: 'string', description: 'Stock symbol' },
           freq: { type: 'string', enum: ['annual', 'quarterly'], default: 'annual' },
+          project: { type: 'string', description: 'Project name for saving data' },
+          export: { type: 'boolean', description: 'Force export to JSON file' },
         },
         required: ['symbol'],
       },
@@ -256,6 +317,8 @@ export const stockMarketDataTool = {
         type: 'object',
         properties: {
           symbol: { type: 'string', description: 'Stock symbol' },
+          project: { type: 'string', description: 'Project name for saving data' },
+          export: { type: 'boolean', description: 'Force export to JSON file' },
         },
         required: ['symbol'],
       },

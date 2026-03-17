@@ -1,12 +1,12 @@
 import { z } from 'zod';
 import * as news from '../api/endpoints/news.js';
 import { getLogger } from '../utils/logger.js';
-import { 
-  createSuccessResult, 
-  createErrorResult, 
+import {
+  createSmartResult,
+  createErrorResult,
   SymbolSchema,
   formatDate,
-  type ToolResult 
+  type ToolResult
 } from './_common.js';
 
 const logger = getLogger('NewsSentimentTool');
@@ -17,34 +17,47 @@ const GetCompanyNewsSchema = z.object({
   from: z.string().optional(),
   to: z.string().optional(),
   days: z.number().default(7),
+  project: z.string().optional(),
+  export: z.boolean().optional(),
 });
 
 const GetMarketNewsSchema = z.object({
   category: z.enum(['general', 'forex', 'crypto', 'merger']).default('general'),
+  project: z.string().optional(),
+  export: z.boolean().optional(),
 });
 
 const GetNewsSentimentSchema = z.object({
   symbol: SymbolSchema,
+  project: z.string().optional(),
+  export: z.boolean().optional(),
 });
 
 const GetInsiderSentimentSchema = z.object({
   symbol: SymbolSchema,
   from: z.string(),
   to: z.string(),
+  project: z.string().optional(),
+  export: z.boolean().optional(),
 });
 
 export async function getCompanyNews(args: unknown): Promise<ToolResult> {
   try {
-    const { symbol, from, to, days } = GetCompanyNewsSchema.parse(args);
-    
+    const { symbol, from, to, days, project, export: forceExport } = GetCompanyNewsSchema.parse(args);
+
     // Calculate date range
     const endDate = to ?? formatDate(new Date());
     const startDate = from ?? formatDate(new Date(Date.now() - days * 24 * 60 * 60 * 1000));
-    
+
     logger.info(`Getting company news for ${symbol} from ${startDate} to ${endDate}`);
-    
+
     const data = await news.getCompanyNews(symbol, startDate, endDate);
-    return createSuccessResult(data);
+    return createSmartResult(data, {
+      project,
+      export: forceExport,
+      subdir: 'news',
+      filename: `${symbol.toLowerCase()}-news-${startDate}-${endDate}.json`,
+    });
   } catch (error) {
     logger.error('Error getting company news:', error);
     if (error instanceof z.ZodError) {
@@ -56,11 +69,16 @@ export async function getCompanyNews(args: unknown): Promise<ToolResult> {
 
 export async function getMarketNews(args: unknown): Promise<ToolResult> {
   try {
-    const { category } = GetMarketNewsSchema.parse(args);
+    const { category, project, export: forceExport } = GetMarketNewsSchema.parse(args);
     logger.info(`Getting market news (${category})`);
-    
+
     const data = await news.getMarketNews(category);
-    return createSuccessResult(data);
+    return createSmartResult(data, {
+      project,
+      export: forceExport,
+      subdir: 'news',
+      filename: `market-news-${category}.json`,
+    });
   } catch (error) {
     logger.error('Error getting market news:', error);
     if (error instanceof z.ZodError) {
@@ -72,11 +90,16 @@ export async function getMarketNews(args: unknown): Promise<ToolResult> {
 
 export async function getNewsSentiment(args: unknown): Promise<ToolResult> {
   try {
-    const { symbol } = GetNewsSentimentSchema.parse(args);
+    const { symbol, project, export: forceExport } = GetNewsSentimentSchema.parse(args);
     logger.info(`Getting news sentiment for ${symbol}`);
-    
+
     const data = await news.getNewsSentiment(symbol);
-    return createSuccessResult(data);
+    return createSmartResult(data, {
+      project,
+      export: forceExport,
+      subdir: 'news',
+      filename: `${symbol.toLowerCase()}-sentiment.json`,
+    });
   } catch (error) {
     logger.error('Error getting news sentiment:', error);
     if (error instanceof z.ZodError) {
@@ -88,11 +111,16 @@ export async function getNewsSentiment(args: unknown): Promise<ToolResult> {
 
 export async function getInsiderSentiment(args: unknown): Promise<ToolResult> {
   try {
-    const { symbol, from, to } = GetInsiderSentimentSchema.parse(args);
+    const { symbol, from, to, project, export: forceExport } = GetInsiderSentimentSchema.parse(args);
     logger.info(`Getting insider sentiment for ${symbol}`);
-    
+
     const data = await news.getInsiderSentiment(symbol, from, to);
-    return createSuccessResult(data);
+    return createSmartResult(data, {
+      project,
+      export: forceExport,
+      subdir: 'news',
+      filename: `${symbol.toLowerCase()}-insider-sentiment-${from}-${to}.json`,
+    });
   } catch (error) {
     logger.error('Error getting insider sentiment:', error);
     if (error instanceof z.ZodError) {
@@ -105,7 +133,7 @@ export async function getInsiderSentiment(args: unknown): Promise<ToolResult> {
 // Tool definition for MCP
 export const newsSentimentTool = {
   name: 'finnhub_news_sentiment',
-  description: 'Access company news, market news, and sentiment analysis',
+  description: 'Access company news, market news, and sentiment analysis. Supports JSON export for large datasets.',
   operations: [
     {
       name: 'get_company_news',
@@ -117,6 +145,8 @@ export const newsSentimentTool = {
           from: { type: 'string', description: 'Start date (YYYY-MM-DD)' },
           to: { type: 'string', description: 'End date (YYYY-MM-DD)' },
           days: { type: 'number', default: 7, description: 'Number of days to fetch' },
+          project: { type: 'string', description: 'Project name for saving data' },
+          export: { type: 'boolean', description: 'Force export to JSON file' },
         },
         required: ['symbol'],
       },
@@ -128,6 +158,8 @@ export const newsSentimentTool = {
         type: 'object',
         properties: {
           category: { type: 'string', enum: ['general', 'forex', 'crypto', 'merger'], default: 'general' },
+          project: { type: 'string', description: 'Project name for saving data' },
+          export: { type: 'boolean', description: 'Force export to JSON file' },
         },
       },
     },
@@ -138,6 +170,8 @@ export const newsSentimentTool = {
         type: 'object',
         properties: {
           symbol: { type: 'string', description: 'Stock symbol' },
+          project: { type: 'string', description: 'Project name for saving data' },
+          export: { type: 'boolean', description: 'Force export to JSON file' },
         },
         required: ['symbol'],
       },
@@ -151,6 +185,8 @@ export const newsSentimentTool = {
           symbol: { type: 'string', description: 'Stock symbol' },
           from: { type: 'string', description: 'Start date (YYYY-MM-DD)' },
           to: { type: 'string', description: 'End date (YYYY-MM-DD)' },
+          project: { type: 'string', description: 'Project name for saving data' },
+          export: { type: 'boolean', description: 'Force export to JSON file' },
         },
         required: ['symbol', 'from', 'to'],
       },
