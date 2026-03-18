@@ -1,6 +1,6 @@
 {
   "name": "aigroup-finnhub-mcp",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Node.js MCP server for Finnhub financial data API",
   "type": "module",
   "main": "dist/index.js",
