@@ -2,6 +2,7 @@ import { z } from 'zod';
 import * as events from '../api/endpoints/events.js';
 import { getLogger } from '../utils/logger.js';
 import { createSmartResult, createErrorResult, SymbolSchema, type ToolResult } from './_common.js';
+import { FinnhubError } from '../api/errors.js';
 
 const logger = getLogger('MarketEventsTool');
 
@@ -29,7 +30,13 @@ export async function getMarketHolidays(args: unknown): Promise<ToolResult> {
       filename: `${exchange.toLowerCase()}-holidays.json`,
     });
   } catch (error) {
-    logger.error('Error:', error);
+    logger.error('Error getting market holidays:', error);
+    if (error instanceof z.ZodError) {
+      return createErrorResult(`Validation error: ${error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`);
+    }
+    if (error instanceof FinnhubError) {
+      return createErrorResult(`API error: ${error.message}`);
+    }
     return createErrorResult(error instanceof Error ? error.message : 'Unknown error');
   }
 }
@@ -46,7 +53,13 @@ export async function getAnalystRatings(args: unknown): Promise<ToolResult> {
       filename: `${symbol.toLowerCase()}-analyst-ratings.json`,
     });
   } catch (error) {
-    logger.error('Error:', error);
+    logger.error('Error getting analyst ratings:', error);
+    if (error instanceof z.ZodError) {
+      return createErrorResult(`Validation error: ${error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`);
+    }
+    if (error instanceof FinnhubError) {
+      return createErrorResult(`API error: ${error.message}`);
+    }
     return createErrorResult(error instanceof Error ? error.message : 'Unknown error');
   }
 }
@@ -63,7 +76,13 @@ export async function getMergerAcquisitions(args: unknown): Promise<ToolResult> 
       filename: 'merger-acquisitions.json',
     });
   } catch (error) {
-    logger.error('Error:', error);
+    logger.error('Error getting merger and acquisitions:', error);
+    if (error instanceof z.ZodError) {
+      return createErrorResult(`Validation error: ${error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`);
+    }
+    if (error instanceof FinnhubError) {
+      return createErrorResult(`API error: ${error.message}`);
+    }
     return createErrorResult(error instanceof Error ? error.message : 'Unknown error');
   }
 }
@@ -78,7 +97,7 @@ export const marketEventsTool = {
       parameters: {
         type: 'object',
         properties: {
-          exchange: { type: 'string' },
+          exchange: { type: 'string', description: 'Exchange code (e.g., US, LSE)' },
           project: { type: 'string', description: 'Project name for saving data' },
           export: { type: 'boolean', description: 'Force export to JSON file' },
         },
@@ -91,7 +110,7 @@ export const marketEventsTool = {
       parameters: {
         type: 'object',
         properties: {
-          symbol: { type: 'string' },
+          symbol: { type: 'string', description: 'Stock symbol' },
           project: { type: 'string', description: 'Project name for saving data' },
           export: { type: 'boolean', description: 'Force export to JSON file' },
         },

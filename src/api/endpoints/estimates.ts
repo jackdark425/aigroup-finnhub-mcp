@@ -10,7 +10,7 @@ import type {
 const client = getFinnhubClient();
 
 export async function getEarningsEstimates(symbol: string): Promise<EarningsEstimate> {
-  return client.get<EarningsEstimate>('/stock/earnings-estimate', {
+  return client.get<EarningsEstimate>('/stock/eps-estimate', {
     symbol: symbol.toUpperCase(),
   });
 }

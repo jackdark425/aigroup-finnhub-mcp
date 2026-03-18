@@ -31,26 +31,28 @@ export async function getFinancialsAsReported(
 
 export async function getDividends(
   symbol: string,
-  from: string,
-  to: string
+  from?: string,
+  to?: string
 ): Promise<Dividend[]> {
-  return client.get<Dividend[]>('/stock/dividend', {
+  const params: Record<string, string> = {
     symbol: symbol.toUpperCase(),
-    from,
-    to,
-  });
+  };
+  if (from) params.from = from;
+  if (to) params.to = to;
+  return client.get<Dividend[]>('/stock/dividend', params);
 }
 
 export async function getStockSplits(
   symbol: string,
-  from: string,
-  to: string
+  from?: string,
+  to?: string
 ): Promise<StockSplit[]> {
-  return client.get<StockSplit[]>('/stock/split', {
+  const params: Record<string, string> = {
     symbol: symbol.toUpperCase(),
-    from,
-    to,
-  });
+  };
+  if (from) params.from = from;
+  if (to) params.to = to;
+  return client.get<StockSplit[]>('/stock/split', params);
 }
 
 export async function getRevenueBreakdown(symbol: string): Promise<RevenueBreakdown> {
@@ -60,7 +62,7 @@ export async function getRevenueBreakdown(symbol: string): Promise<RevenueBreakd
 }
 
 export async function getEarningsSurprises(symbol: string): Promise<unknown[]> {
-  return client.get<unknown[]>('/stock/earnings-surprises', {
+  return client.get<unknown[]>('/stock/earningsSurprises', {
     symbol: symbol.toUpperCase(),
   });
 }

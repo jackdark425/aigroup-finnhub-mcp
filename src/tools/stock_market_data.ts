@@ -9,6 +9,7 @@ import {
   getUnixTimestamp,
   type ToolResult
 } from './_common.js';
+import { FinnhubError } from '../api/errors.js';
 
 const logger = getLogger('StockMarketDataTool');
 
@@ -76,7 +77,10 @@ export async function getQuote(args: unknown): Promise<ToolResult> {
   } catch (error) {
     logger.error('Error getting quote:', error);
     if (error instanceof z.ZodError) {
-      return createErrorResult(`Validation error: ${error.errors.map((e: z.ZodIssue) => e.message).join(', ')}`);
+      return createErrorResult(`Validation error: ${error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`);
+    }
+    if (error instanceof FinnhubError) {
+      return createErrorResult(`API error: ${error.message}`);
     }
     return createErrorResult(error instanceof Error ? error.message : 'Unknown error');
   }
@@ -110,7 +114,10 @@ export async function getCandles(args: unknown): Promise<ToolResult> {
   } catch (error) {
     logger.error('Error getting candles:', error);
     if (error instanceof z.ZodError) {
-      return createErrorResult(`Validation error: ${error.errors.map((e: z.ZodIssue) => e.message).join(', ')}`);
+      return createErrorResult(`Validation error: ${error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`);
+    }
+    if (error instanceof FinnhubError) {
+      return createErrorResult(`API error: ${error.message}`);
     }
     return createErrorResult(error instanceof Error ? error.message : 'Unknown error');
   }
@@ -131,7 +138,10 @@ export async function getCompanyProfile(args: unknown): Promise<ToolResult> {
   } catch (error) {
     logger.error('Error getting company profile:', error);
     if (error instanceof z.ZodError) {
-      return createErrorResult(`Validation error: ${error.errors.map((e: z.ZodIssue) => e.message).join(', ')}`);
+      return createErrorResult(`Validation error: ${error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`);
+    }
+    if (error instanceof FinnhubError) {
+      return createErrorResult(`API error: ${error.message}`);
     }
     return createErrorResult(error instanceof Error ? error.message : 'Unknown error');
   }
@@ -152,7 +162,10 @@ export async function symbolLookup(args: unknown): Promise<ToolResult> {
   } catch (error) {
     logger.error('Error looking up symbol:', error);
     if (error instanceof z.ZodError) {
-      return createErrorResult(`Validation error: ${error.errors.map((e: z.ZodIssue) => e.message).join(', ')}`);
+      return createErrorResult(`Validation error: ${error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`);
+    }
+    if (error instanceof FinnhubError) {
+      return createErrorResult(`API error: ${error.message}`);
     }
     return createErrorResult(error instanceof Error ? error.message : 'Unknown error');
   }
@@ -173,7 +186,10 @@ export async function getBasicFinancials(args: unknown): Promise<ToolResult> {
   } catch (error) {
     logger.error('Error getting basic financials:', error);
     if (error instanceof z.ZodError) {
-      return createErrorResult(`Validation error: ${error.errors.map((e: z.ZodIssue) => e.message).join(', ')}`);
+      return createErrorResult(`Validation error: ${error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`);
+    }
+    if (error instanceof FinnhubError) {
+      return createErrorResult(`API error: ${error.message}`);
     }
     return createErrorResult(error instanceof Error ? error.message : 'Unknown error');
   }
@@ -194,7 +210,10 @@ export async function getFinancialsAsReported(args: unknown): Promise<ToolResult
   } catch (error) {
     logger.error('Error getting financials as reported:', error);
     if (error instanceof z.ZodError) {
-      return createErrorResult(`Validation error: ${error.errors.map((e: z.ZodIssue) => e.message).join(', ')}`);
+      return createErrorResult(`Validation error: ${error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`);
+    }
+    if (error instanceof FinnhubError) {
+      return createErrorResult(`API error: ${error.message}`);
     }
     return createErrorResult(error instanceof Error ? error.message : 'Unknown error');
   }
@@ -215,7 +234,10 @@ export async function getEarningsSurprises(args: unknown): Promise<ToolResult> {
   } catch (error) {
     logger.error('Error getting earnings surprises:', error);
     if (error instanceof z.ZodError) {
-      return createErrorResult(`Validation error: ${error.errors.map((e: z.ZodIssue) => e.message).join(', ')}`);
+      return createErrorResult(`Validation error: ${error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`);
+    }
+    if (error instanceof FinnhubError) {
+      return createErrorResult(`API error: ${error.message}`);
     }
     return createErrorResult(error instanceof Error ? error.message : 'Unknown error');
   }

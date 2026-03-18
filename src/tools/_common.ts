@@ -42,7 +42,7 @@ export async function exportToFile(
   const storage = getFileStorage();
   
   // If no project specified, use 'default' project
-  const projectName = project || 'default';
+  const projectName = project ?? 'default';
   
   // Ensure project exists
   const exists = await storage.projectExists(projectName);
@@ -55,6 +55,20 @@ export async function exportToFile(
   return filePath;
 }
 
+// Check if data is empty (empty object or empty array)
+export function isEmptyData(data: unknown): boolean {
+  if (data === null || data === undefined) {
+    return true;
+  }
+  if (Array.isArray(data) && data.length === 0) {
+    return true;
+  }
+  if (typeof data === 'object' && Object.keys(data).length === 0) {
+    return true;
+  }
+  return false;
+}
+
 // Smart result creator - automatically exports to file if data is large
 export async function createSmartResult(
   data: unknown,
@@ -65,13 +79,18 @@ export async function createSmartResult(
     export?: boolean; // force export
   } = {}
 ): Promise<ToolResult> {
+  // Check for empty data before processing
+  if (isEmptyData(data)) {
+    return createErrorResult('No data available for the specified criteria');
+  }
+  
   const estimatedTokens = estimateTokens(data);
   const needsExport = shouldExportToFile(data, options.export);
   
   if (needsExport) {
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const defaultFilename = options.filename || `data-${timestamp}.json`;
-    const subdir = options.subdir || 'market-data';
+    const defaultFilename = options.filename ?? `data-${timestamp}.json`;
+    const subdir = options.subdir ?? 'market-data';
     
     try {
       const filePath = await exportToFile(options.project, subdir, defaultFilename, data);

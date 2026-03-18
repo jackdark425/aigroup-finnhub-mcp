@@ -9,6 +9,7 @@ import {
   getUnixDaysAgo,
   type ToolResult
 } from './_common.js';
+import { FinnhubError } from '../api/errors.js';
 
 const logger = getLogger('ForexDataTool');
 
@@ -19,8 +20,8 @@ const GetForexSymbolsSchema = z.object({
 });
 
 const GetForexRateSchema = z.object({
-  from: z.string(),
-  to: z.string(),
+  from: z.string().min(1),
+  to: z.string().min(1),
   project: z.string().optional(),
   export: z.boolean().optional(),
 });
@@ -47,7 +48,13 @@ export async function getForexExchanges(args: unknown): Promise<ToolResult> {
       filename: 'exchanges.json',
     });
   } catch (error) {
-    logger.error('Error:', error);
+    logger.error('Error getting forex exchanges:', error);
+    if (error instanceof z.ZodError) {
+      return createErrorResult(`Validation error: ${error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`);
+    }
+    if (error instanceof FinnhubError) {
+      return createErrorResult(`API error: ${error.message}`);
+    }
     return createErrorResult(error instanceof Error ? error.message : 'Unknown error');
   }
 }
@@ -64,7 +71,13 @@ export async function getForexSymbols(args: unknown): Promise<ToolResult> {
       filename: `${exchange}-symbols.json`,
     });
   } catch (error) {
-    logger.error('Error:', error);
+    logger.error('Error getting forex symbols:', error);
+    if (error instanceof z.ZodError) {
+      return createErrorResult(`Validation error: ${error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`);
+    }
+    if (error instanceof FinnhubError) {
+      return createErrorResult(`API error: ${error.message}`);
+    }
     return createErrorResult(error instanceof Error ? error.message : 'Unknown error');
   }
 }
@@ -81,7 +94,13 @@ export async function getForexRate(args: unknown): Promise<ToolResult> {
       filename: `${fromCurrency.toLowerCase()}-${toCurrency.toLowerCase()}-rate.json`,
     });
   } catch (error) {
-    logger.error('Error:', error);
+    logger.error('Error getting forex rate:', error);
+    if (error instanceof z.ZodError) {
+      return createErrorResult(`Validation error: ${error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`);
+    }
+    if (error instanceof FinnhubError) {
+      return createErrorResult(`API error: ${error.message}`);
+    }
     return createErrorResult(error instanceof Error ? error.message : 'Unknown error');
   }
 }
@@ -100,7 +119,13 @@ export async function getForexCandles(args: unknown): Promise<ToolResult> {
       filename: `${symbol.toLowerCase().replace(':', '-')}-candles-${resolution}.json`,
     });
   } catch (error) {
-    logger.error('Error:', error);
+    logger.error('Error getting forex candles:', error);
+    if (error instanceof z.ZodError) {
+      return createErrorResult(`Validation error: ${error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`);
+    }
+    if (error instanceof FinnhubError) {
+      return createErrorResult(`API error: ${error.message}`);
+    }
     return createErrorResult(error instanceof Error ? error.message : 'Unknown error');
   }
 }
@@ -126,7 +151,7 @@ export const forexDataTool = {
       parameters: {
         type: 'object',
         properties: {
-          exchange: { type: 'string' },
+          exchange: { type: 'string', description: 'Forex exchange name' },
           project: { type: 'string', description: 'Project name for saving data' },
           export: { type: 'boolean', description: 'Force export to JSON file' },
         },
@@ -139,8 +164,8 @@ export const forexDataTool = {
       parameters: {
         type: 'object',
         properties: {
-          from: { type: 'string' },
-          to: { type: 'string' },
+          from: { type: 'string', description: 'Base currency code' },
+          to: { type: 'string', description: 'Target currency code' },
           project: { type: 'string', description: 'Project name for saving data' },
           export: { type: 'boolean', description: 'Force export to JSON file' },
         },
@@ -153,7 +178,7 @@ export const forexDataTool = {
       parameters: {
         type: 'object',
         properties: {
-          symbol: { type: 'string' },
+          symbol: { type: 'string', description: 'Forex symbol' },
           resolution: { type: 'string', enum: ['1', '5', '15', '30', '60', 'D', 'W', 'M'] },
           days: { type: 'number', default: 30 },
           project: { type: 'string', description: 'Project name for saving data' },

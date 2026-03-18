@@ -2,8 +2,11 @@ import { z } from 'zod';
 import * as fundamentals from '../api/endpoints/fundamentals.js';
 import { getLogger } from '../utils/logger.js';
 import { createSmartResult, createErrorResult, SymbolSchema, type ToolResult } from './_common.js';
+import { FinnhubError } from '../api/errors.js';
 
 const logger = getLogger('FundamentalsTool');
+
+const DateStringSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format');
 
 const GetBasicFinancialsSchema = z.object({
   symbol: SymbolSchema,
@@ -21,16 +24,16 @@ const GetFinancialsAsReportedSchema = z.object({
 
 const GetDividendsSchema = z.object({
   symbol: SymbolSchema,
-  from: z.string(),
-  to: z.string(),
+  from: DateStringSchema.optional(),
+  to: DateStringSchema.optional(),
   project: z.string().optional(),
   export: z.boolean().optional(),
 });
 
 const GetStockSplitsSchema = z.object({
   symbol: SymbolSchema,
-  from: z.string(),
-  to: z.string(),
+  from: DateStringSchema.optional(),
+  to: DateStringSchema.optional(),
   project: z.string().optional(),
   export: z.boolean().optional(),
 });
@@ -55,7 +58,10 @@ export async function getBasicFinancials(args: unknown): Promise<ToolResult> {
   } catch (error) {
     logger.error('Error getting basic financials:', error);
     if (error instanceof z.ZodError) {
-      return createErrorResult(`Validation error: ${error.errors.map((e: z.ZodIssue) => e.message).join(', ')}`);
+      return createErrorResult(`Validation error: ${error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`);
+    }
+    if (error instanceof FinnhubError) {
+      return createErrorResult(`API error: ${error.message}`);
     }
     return createErrorResult(error instanceof Error ? error.message : 'Unknown error');
   }
@@ -75,7 +81,10 @@ export async function getFinancialsAsReported(args: unknown): Promise<ToolResult
   } catch (error) {
     logger.error('Error getting financials as reported:', error);
     if (error instanceof z.ZodError) {
-      return createErrorResult(`Validation error: ${error.errors.map((e: z.ZodIssue) => e.message).join(', ')}`);
+      return createErrorResult(`Validation error: ${error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`);
+    }
+    if (error instanceof FinnhubError) {
+      return createErrorResult(`API error: ${error.message}`);
     }
     return createErrorResult(error instanceof Error ? error.message : 'Unknown error');
   }
@@ -90,12 +99,15 @@ export async function getDividends(args: unknown): Promise<ToolResult> {
       project,
       export: forceExport,
       subdir: 'fundamentals',
-      filename: `${symbol.toLowerCase()}-dividends-${from}-${to}.json`,
+      filename: `${symbol.toLowerCase()}-dividends-${from ?? 'all'}-${to ?? 'all'}.json`,
     });
   } catch (error) {
     logger.error('Error getting dividends:', error);
     if (error instanceof z.ZodError) {
-      return createErrorResult(`Validation error: ${error.errors.map((e: z.ZodIssue) => e.message).join(', ')}`);
+      return createErrorResult(`Validation error: ${error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`);
+    }
+    if (error instanceof FinnhubError) {
+      return createErrorResult(`API error: ${error.message}`);
     }
     return createErrorResult(error instanceof Error ? error.message : 'Unknown error');
   }
@@ -110,12 +122,15 @@ export async function getStockSplits(args: unknown): Promise<ToolResult> {
       project,
       export: forceExport,
       subdir: 'fundamentals',
-      filename: `${symbol.toLowerCase()}-splits-${from}-${to}.json`,
+      filename: `${symbol.toLowerCase()}-splits-${from ?? 'all'}-${to ?? 'all'}.json`,
     });
   } catch (error) {
     logger.error('Error getting stock splits:', error);
     if (error instanceof z.ZodError) {
-      return createErrorResult(`Validation error: ${error.errors.map((e: z.ZodIssue) => e.message).join(', ')}`);
+      return createErrorResult(`Validation error: ${error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`);
+    }
+    if (error instanceof FinnhubError) {
+      return createErrorResult(`API error: ${error.message}`);
     }
     return createErrorResult(error instanceof Error ? error.message : 'Unknown error');
   }
@@ -126,6 +141,12 @@ export async function getRevenueBreakdown(args: unknown): Promise<ToolResult> {
     const { symbol, project, export: forceExport } = GetRevenueBreakdownSchema.parse(args);
     logger.info(`Getting revenue breakdown for ${symbol}`);
     const data = await fundamentals.getRevenueBreakdown(symbol);
+    
+    // Check for empty data (revenue breakdown often requires paid subscription)
+    if (!data || (Array.isArray(data) && data.length === 0) || (typeof data === 'object' && Object.keys(data).length === 0)) {
+      return createErrorResult('No revenue breakdown data available for the specified criteria. Note: Revenue breakdown data may require a paid Finnhub subscription.');
+    }
+    
     return createSmartResult(data, {
       project,
       export: forceExport,
@@ -135,7 +156,10 @@ export async function getRevenueBreakdown(args: unknown): Promise<ToolResult> {
   } catch (error) {
     logger.error('Error getting revenue breakdown:', error);
     if (error instanceof z.ZodError) {
-      return createErrorResult(`Validation error: ${error.errors.map((e: z.ZodIssue) => e.message).join(', ')}`);
+      return createErrorResult(`Validation error: ${error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`);
+    }
+    if (error instanceof FinnhubError) {
+      return createErrorResult(`API error: ${error.message}`);
     }
     return createErrorResult(error instanceof Error ? error.message : 'Unknown error');
   }
@@ -151,7 +175,7 @@ export const fundamentalsTool = {
       parameters: {
         type: 'object',
         properties: {
-          symbol: { type: 'string' },
+          symbol: { type: 'string', description: 'Stock symbol' },
           metricType: { type: 'string', enum: ['all', 'price', 'valuation', 'growth'], default: 'all' },
           project: { type: 'string', description: 'Project name for saving data' },
           export: { type: 'boolean', description: 'Force export to JSON file' },
@@ -165,7 +189,7 @@ export const fundamentalsTool = {
       parameters: {
         type: 'object',
         properties: {
-          symbol: { type: 'string' },
+          symbol: { type: 'string', description: 'Stock symbol' },
           freq: { type: 'string', enum: ['annual', 'quarterly'], default: 'annual' },
           project: { type: 'string', description: 'Project name for saving data' },
           export: { type: 'boolean', description: 'Force export to JSON file' },
@@ -179,13 +203,13 @@ export const fundamentalsTool = {
       parameters: {
         type: 'object',
         properties: {
-          symbol: { type: 'string' },
-          from: { type: 'string' },
-          to: { type: 'string' },
+          symbol: { type: 'string', description: 'Stock symbol' },
+          from: { type: 'string', description: 'Start date in YYYY-MM-DD format (optional)' },
+          to: { type: 'string', description: 'End date in YYYY-MM-DD format (optional)' },
           project: { type: 'string', description: 'Project name for saving data' },
           export: { type: 'boolean', description: 'Force export to JSON file' },
         },
-        required: ['symbol', 'from', 'to'],
+        required: ['symbol'],
       },
     },
     {
@@ -194,13 +218,13 @@ export const fundamentalsTool = {
       parameters: {
         type: 'object',
         properties: {
-          symbol: { type: 'string' },
-          from: { type: 'string' },
-          to: { type: 'string' },
+          symbol: { type: 'string', description: 'Stock symbol' },
+          from: { type: 'string', description: 'Start date in YYYY-MM-DD format (optional)' },
+          to: { type: 'string', description: 'End date in YYYY-MM-DD format (optional)' },
           project: { type: 'string', description: 'Project name for saving data' },
           export: { type: 'boolean', description: 'Force export to JSON file' },
         },
-        required: ['symbol', 'from', 'to'],
+        required: ['symbol'],
       },
     },
     {
@@ -209,7 +233,7 @@ export const fundamentalsTool = {
       parameters: {
         type: 'object',
         properties: {
-          symbol: { type: 'string' },
+          symbol: { type: 'string', description: 'Stock symbol' },
           project: { type: 'string', description: 'Project name for saving data' },
           export: { type: 'boolean', description: 'Force export to JSON file' },
         },

@@ -2,14 +2,17 @@ import { z } from 'zod';
 import * as filings from '../api/endpoints/filings.js';
 import { getLogger } from '../utils/logger.js';
 import { createSmartResult, createErrorResult, SymbolSchema, type ToolResult } from './_common.js';
+import { FinnhubError } from '../api/errors.js';
 
 const logger = getLogger('SECFilingsTool');
+
+const DateStringSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format');
 
 const GetSECFilingsSchema = z.object({
   symbol: SymbolSchema,
   form: z.string().optional(),
-  from: z.string().optional(),
-  to: z.string().optional(),
+  from: DateStringSchema.optional(),
+  to: DateStringSchema.optional(),
   project: z.string().optional(),
   export: z.boolean().optional(),
 });
@@ -38,7 +41,13 @@ export async function getSECFilings(args: unknown): Promise<ToolResult> {
       filename: `${symbol.toLowerCase()}-sec-filings${form ? `-${form}` : ''}.json`,
     });
   } catch (error) {
-    logger.error('Error:', error);
+    logger.error('Error getting SEC filings:', error);
+    if (error instanceof z.ZodError) {
+      return createErrorResult(`Validation error: ${error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`);
+    }
+    if (error instanceof FinnhubError) {
+      return createErrorResult(`API error: ${error.message}`);
+    }
     return createErrorResult(error instanceof Error ? error.message : 'Unknown error');
   }
 }
@@ -55,7 +64,13 @@ export async function getFilingSentiment(args: unknown): Promise<ToolResult> {
       filename: `${symbol.toLowerCase()}-filing-sentiment.json`,
     });
   } catch (error) {
-    logger.error('Error:', error);
+    logger.error('Error getting filing sentiment:', error);
+    if (error instanceof z.ZodError) {
+      return createErrorResult(`Validation error: ${error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`);
+    }
+    if (error instanceof FinnhubError) {
+      return createErrorResult(`API error: ${error.message}`);
+    }
     return createErrorResult(error instanceof Error ? error.message : 'Unknown error');
   }
 }
@@ -72,7 +87,13 @@ export async function getSimilarityIndex(args: unknown): Promise<ToolResult> {
       filename: `${symbol.toLowerCase()}-similarity-index.json`,
     });
   } catch (error) {
-    logger.error('Error:', error);
+    logger.error('Error getting similarity index:', error);
+    if (error instanceof z.ZodError) {
+      return createErrorResult(`Validation error: ${error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`);
+    }
+    if (error instanceof FinnhubError) {
+      return createErrorResult(`API error: ${error.message}`);
+    }
     return createErrorResult(error instanceof Error ? error.message : 'Unknown error');
   }
 }
@@ -87,10 +108,10 @@ export const secFilingsTool = {
       parameters: {
         type: 'object',
         properties: {
-          symbol: { type: 'string' },
-          form: { type: 'string' },
-          from: { type: 'string' },
-          to: { type: 'string' },
+          symbol: { type: 'string', description: 'Stock symbol' },
+          form: { type: 'string', description: 'Form type filter (e.g., 10-K, 10-Q)' },
+          from: { type: 'string', description: 'Start date in YYYY-MM-DD format (optional)' },
+          to: { type: 'string', description: 'End date in YYYY-MM-DD format (optional)' },
           project: { type: 'string', description: 'Project name for saving data' },
           export: { type: 'boolean', description: 'Force export to JSON file' },
         },
@@ -103,7 +124,7 @@ export const secFilingsTool = {
       parameters: {
         type: 'object',
         properties: {
-          symbol: { type: 'string' },
+          symbol: { type: 'string', description: 'Stock symbol' },
           project: { type: 'string', description: 'Project name for saving data' },
           export: { type: 'boolean', description: 'Force export to JSON file' },
         },
@@ -116,7 +137,7 @@ export const secFilingsTool = {
       parameters: {
         type: 'object',
         properties: {
-          symbol: { type: 'string' },
+          symbol: { type: 'string', description: 'Stock symbol' },
           project: { type: 'string', description: 'Project name for saving data' },
           export: { type: 'boolean', description: 'Force export to JSON file' },
         },

@@ -9,14 +9,15 @@ const client = getFinnhubClient();
 
 export async function getInsiderTransactions(
   symbol: string,
-  from: string,
-  to: string
+  from?: string,
+  to?: string
 ): Promise<InsiderTransaction[]> {
-  return client.get<InsiderTransaction[]>('/stock/insider-transactions', {
+  const params: Record<string, string> = {
     symbol: symbol.toUpperCase(),
-    from,
-    to,
-  });
+  };
+  if (from) params.from = from;
+  if (to) params.to = to;
+  return client.get<InsiderTransaction[]>('/stock/insider-transactions', params);
 }
 
 export async function getInstitutionalOwnership(symbol: string): Promise<InstitutionalOwnership> {
@@ -26,7 +27,7 @@ export async function getInstitutionalOwnership(symbol: string): Promise<Institu
 }
 
 export async function getInstitutionalPortfolio(cik: string): Promise<unknown> {
-  return client.get('/institutional/portfolio', { cik });
+  return client.get('/institutional/manager', { cik });
 }
 
 export async function getCongressTransactions(

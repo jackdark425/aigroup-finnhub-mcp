@@ -68,7 +68,7 @@ export async function getFinancialsAsReported(
 }
 
 export async function getEarningsSurprises(symbol: string): Promise<unknown> {
-  return client.get('/stock/earnings-surprises', { 
-    symbol: symbol.toUpperCase() 
+  return client.get('/stock/earningsSurprises', {
+    symbol: symbol.toUpperCase()
   });
 }

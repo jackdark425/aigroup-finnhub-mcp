@@ -9,6 +9,7 @@ import {
   getUnixTimestamp,
   type ToolResult
 } from './_common.js';
+import { FinnhubError } from '../api/errors.js';
 
 const logger = getLogger('TechnicalAnalysisTool');
 
@@ -96,7 +97,10 @@ export async function getTechnicalIndicator(args: unknown): Promise<ToolResult> 
   } catch (error) {
     logger.error('Error getting technical indicator:', error);
     if (error instanceof z.ZodError) {
-      return createErrorResult(`Validation error: ${error.errors.map((e: z.ZodIssue) => e.message).join(', ')}`);
+      return createErrorResult(`Validation error: ${error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`);
+    }
+    if (error instanceof FinnhubError) {
+      return createErrorResult(`API error: ${error.message}`);
     }
     return createErrorResult(error instanceof Error ? error.message : 'Unknown error');
   }
@@ -108,6 +112,12 @@ export async function getAggregateSignals(args: unknown): Promise<ToolResult> {
     logger.info(`Getting aggregate signals for ${symbol}`);
 
     const data = await technical.getAggregateSignals(symbol);
+    
+    // Check for empty data (empty object or object with no meaningful data)
+    if (!data || Object.keys(data).length === 0) {
+      return createErrorResult('No data available for the specified criteria. Note: Aggregate signals may require a paid Finnhub subscription.');
+    }
+    
     return createSmartResult(data, {
       project,
       export: forceExport,
@@ -117,7 +127,10 @@ export async function getAggregateSignals(args: unknown): Promise<ToolResult> {
   } catch (error) {
     logger.error('Error getting aggregate signals:', error);
     if (error instanceof z.ZodError) {
-      return createErrorResult(`Validation error: ${error.errors.map((e: z.ZodIssue) => e.message).join(', ')}`);
+      return createErrorResult(`Validation error: ${error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`);
+    }
+    if (error instanceof FinnhubError) {
+      return createErrorResult(`API error: ${error.message}`);
     }
     return createErrorResult(error instanceof Error ? error.message : 'Unknown error');
   }
@@ -138,7 +151,10 @@ export async function getPatternRecognition(args: unknown): Promise<ToolResult> 
   } catch (error) {
     logger.error('Error getting pattern recognition:', error);
     if (error instanceof z.ZodError) {
-      return createErrorResult(`Validation error: ${error.errors.map((e: z.ZodIssue) => e.message).join(', ')}`);
+      return createErrorResult(`Validation error: ${error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`);
+    }
+    if (error instanceof FinnhubError) {
+      return createErrorResult(`API error: ${error.message}`);
     }
     return createErrorResult(error instanceof Error ? error.message : 'Unknown error');
   }
@@ -159,7 +175,10 @@ export async function getSupportResistance(args: unknown): Promise<ToolResult> {
   } catch (error) {
     logger.error('Error getting support/resistance:', error);
     if (error instanceof z.ZodError) {
-      return createErrorResult(`Validation error: ${error.errors.map((e: z.ZodIssue) => e.message).join(', ')}`);
+      return createErrorResult(`Validation error: ${error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`);
+    }
+    if (error instanceof FinnhubError) {
+      return createErrorResult(`API error: ${error.message}`);
     }
     return createErrorResult(error instanceof Error ? error.message : 'Unknown error');
   }

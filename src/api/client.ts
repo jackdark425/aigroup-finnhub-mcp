@@ -52,7 +52,15 @@ export class FinnhubClient {
 
     // Add response interceptor for error handling
     this.client.interceptors.response.use(
-      (response: AxiosResponse) => response,
+      (response: AxiosResponse) => {
+        // Check if response is HTML instead of JSON (indicates invalid endpoint)
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        const data = response.data;
+        if (typeof data === 'string' && (data.trim().startsWith('<!DOCTYPE') || data.trim().startsWith('<html'))) {
+          throw new Error('Invalid API endpoint');
+        }
+        return response;
+      },
       async (error: AxiosError) => {
         if (error.response?.status === 429) {
           throw new RateLimitError();

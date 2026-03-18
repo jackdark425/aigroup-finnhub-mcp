@@ -27,14 +27,15 @@ export async function getNewsSentiment(symbol: string): Promise<NewsSentiment> {
 
 export async function getInsiderSentiment(
   symbol: string,
-  from: string,
-  to: string
+  from?: string,
+  to?: string
 ): Promise<InsiderSentiment> {
-  return client.get<InsiderSentiment>('/stock/insider-sentiment', {
+  const params: Record<string, string> = {
     symbol: symbol.toUpperCase(),
-    from,
-    to,
-  });
+  };
+  if (from) params.from = from;
+  if (to) params.to = to;
+  return client.get<InsiderSentiment>('/stock/insider-sentiment', params);
 }
 
 export async function getMajorPressReleases(symbol: string): Promise<unknown> {

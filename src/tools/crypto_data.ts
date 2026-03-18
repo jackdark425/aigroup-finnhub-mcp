@@ -9,6 +9,7 @@ import {
   getUnixDaysAgo,
   type ToolResult
 } from './_common.js';
+import { FinnhubError } from '../api/errors.js';
 
 const logger = getLogger('CryptoDataTool');
 
@@ -46,7 +47,13 @@ export async function getCryptoExchanges(args: unknown): Promise<ToolResult> {
       filename: 'exchanges.json',
     });
   } catch (error) {
-    logger.error('Error:', error);
+    logger.error('Error getting crypto exchanges:', error);
+    if (error instanceof z.ZodError) {
+      return createErrorResult(`Validation error: ${error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`);
+    }
+    if (error instanceof FinnhubError) {
+      return createErrorResult(`API error: ${error.message}`);
+    }
     return createErrorResult(error instanceof Error ? error.message : 'Unknown error');
   }
 }
@@ -63,7 +70,13 @@ export async function getCryptoSymbols(args: unknown): Promise<ToolResult> {
       filename: `${exchange}-symbols.json`,
     });
   } catch (error) {
-    logger.error('Error:', error);
+    logger.error('Error getting crypto symbols:', error);
+    if (error instanceof z.ZodError) {
+      return createErrorResult(`Validation error: ${error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`);
+    }
+    if (error instanceof FinnhubError) {
+      return createErrorResult(`API error: ${error.message}`);
+    }
     return createErrorResult(error instanceof Error ? error.message : 'Unknown error');
   }
 }
@@ -80,7 +93,13 @@ export async function getCryptoQuote(args: unknown): Promise<ToolResult> {
       filename: `${symbol.toLowerCase().replace(':', '-')}-quote.json`,
     });
   } catch (error) {
-    logger.error('Error:', error);
+    logger.error('Error getting crypto quote:', error);
+    if (error instanceof z.ZodError) {
+      return createErrorResult(`Validation error: ${error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`);
+    }
+    if (error instanceof FinnhubError) {
+      return createErrorResult(`API error: ${error.message}`);
+    }
     return createErrorResult(error instanceof Error ? error.message : 'Unknown error');
   }
 }
@@ -99,7 +118,13 @@ export async function getCryptoCandles(args: unknown): Promise<ToolResult> {
       filename: `${symbol.toLowerCase().replace(':', '-')}-candles-${resolution}.json`,
     });
   } catch (error) {
-    logger.error('Error:', error);
+    logger.error('Error getting crypto candles:', error);
+    if (error instanceof z.ZodError) {
+      return createErrorResult(`Validation error: ${error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`);
+    }
+    if (error instanceof FinnhubError) {
+      return createErrorResult(`API error: ${error.message}`);
+    }
     return createErrorResult(error instanceof Error ? error.message : 'Unknown error');
   }
 }
@@ -125,7 +150,7 @@ export const cryptoDataTool = {
       parameters: {
         type: 'object',
         properties: {
-          exchange: { type: 'string' },
+          exchange: { type: 'string', description: 'Crypto exchange name' },
           project: { type: 'string', description: 'Project name for saving data' },
           export: { type: 'boolean', description: 'Force export to JSON file' },
         },
@@ -138,7 +163,7 @@ export const cryptoDataTool = {
       parameters: {
         type: 'object',
         properties: {
-          symbol: { type: 'string' },
+          symbol: { type: 'string', description: 'Crypto symbol' },
           project: { type: 'string', description: 'Project name for saving data' },
           export: { type: 'boolean', description: 'Force export to JSON file' },
         },
@@ -151,7 +176,7 @@ export const cryptoDataTool = {
       parameters: {
         type: 'object',
         properties: {
-          symbol: { type: 'string' },
+          symbol: { type: 'string', description: 'Crypto symbol' },
           resolution: { type: 'string', enum: ['1', '5', '15', '30', '60', 'D', 'W', 'M'] },
           days: { type: 'number', default: 30 },
           project: { type: 'string', description: 'Project name for saving data' },

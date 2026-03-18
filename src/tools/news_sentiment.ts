@@ -6,16 +6,20 @@ import {
   createErrorResult,
   SymbolSchema,
   formatDate,
+  getDateDaysAgo,
   type ToolResult
 } from './_common.js';
+import { FinnhubError } from '../api/errors.js';
 
 const logger = getLogger('NewsSentimentTool');
+
+const DateStringSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format');
 
 // Schemas
 const GetCompanyNewsSchema = z.object({
   symbol: SymbolSchema,
-  from: z.string().optional(),
-  to: z.string().optional(),
+  from: DateStringSchema.optional(),
+  to: DateStringSchema.optional(),
   days: z.number().default(7),
   project: z.string().optional(),
   export: z.boolean().optional(),
@@ -35,8 +39,8 @@ const GetNewsSentimentSchema = z.object({
 
 const GetInsiderSentimentSchema = z.object({
   symbol: SymbolSchema,
-  from: z.string(),
-  to: z.string(),
+  from: DateStringSchema.optional(),
+  to: DateStringSchema.optional(),
   project: z.string().optional(),
   export: z.boolean().optional(),
 });
@@ -47,7 +51,7 @@ export async function getCompanyNews(args: unknown): Promise<ToolResult> {
 
     // Calculate date range
     const endDate = to ?? formatDate(new Date());
-    const startDate = from ?? formatDate(new Date(Date.now() - days * 24 * 60 * 60 * 1000));
+    const startDate = from ?? getDateDaysAgo(days);
 
     logger.info(`Getting company news for ${symbol} from ${startDate} to ${endDate}`);
 
@@ -61,7 +65,10 @@ export async function getCompanyNews(args: unknown): Promise<ToolResult> {
   } catch (error) {
     logger.error('Error getting company news:', error);
     if (error instanceof z.ZodError) {
-      return createErrorResult(`Validation error: ${error.errors.map((e: z.ZodIssue) => e.message).join(', ')}`);
+      return createErrorResult(`Validation error: ${error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`);
+    }
+    if (error instanceof FinnhubError) {
+      return createErrorResult(`API error: ${error.message}`);
     }
     return createErrorResult(error instanceof Error ? error.message : 'Unknown error');
   }
@@ -82,7 +89,10 @@ export async function getMarketNews(args: unknown): Promise<ToolResult> {
   } catch (error) {
     logger.error('Error getting market news:', error);
     if (error instanceof z.ZodError) {
-      return createErrorResult(`Validation error: ${error.errors.map((e: z.ZodIssue) => e.message).join(', ')}`);
+      return createErrorResult(`Validation error: ${error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`);
+    }
+    if (error instanceof FinnhubError) {
+      return createErrorResult(`API error: ${error.message}`);
     }
     return createErrorResult(error instanceof Error ? error.message : 'Unknown error');
   }
@@ -103,7 +113,10 @@ export async function getNewsSentiment(args: unknown): Promise<ToolResult> {
   } catch (error) {
     logger.error('Error getting news sentiment:', error);
     if (error instanceof z.ZodError) {
-      return createErrorResult(`Validation error: ${error.errors.map((e: z.ZodIssue) => e.message).join(', ')}`);
+      return createErrorResult(`Validation error: ${error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`);
+    }
+    if (error instanceof FinnhubError) {
+      return createErrorResult(`API error: ${error.message}`);
     }
     return createErrorResult(error instanceof Error ? error.message : 'Unknown error');
   }
@@ -119,12 +132,15 @@ export async function getInsiderSentiment(args: unknown): Promise<ToolResult> {
       project,
       export: forceExport,
       subdir: 'news',
-      filename: `${symbol.toLowerCase()}-insider-sentiment-${from}-${to}.json`,
+      filename: `${symbol.toLowerCase()}-insider-sentiment-${from ?? 'all'}-${to ?? 'all'}.json`,
     });
   } catch (error) {
     logger.error('Error getting insider sentiment:', error);
     if (error instanceof z.ZodError) {
-      return createErrorResult(`Validation error: ${error.errors.map((e: z.ZodIssue) => e.message).join(', ')}`);
+      return createErrorResult(`Validation error: ${error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`);
+    }
+    if (error instanceof FinnhubError) {
+      return createErrorResult(`API error: ${error.message}`);
     }
     return createErrorResult(error instanceof Error ? error.message : 'Unknown error');
   }
@@ -142,8 +158,8 @@ export const newsSentimentTool = {
         type: 'object',
         properties: {
           symbol: { type: 'string', description: 'Stock symbol' },
-          from: { type: 'string', description: 'Start date (YYYY-MM-DD)' },
-          to: { type: 'string', description: 'End date (YYYY-MM-DD)' },
+          from: { type: 'string', description: 'Start date in YYYY-MM-DD format (optional)' },
+          to: { type: 'string', description: 'End date in YYYY-MM-DD format (optional)' },
           days: { type: 'number', default: 7, description: 'Number of days to fetch' },
           project: { type: 'string', description: 'Project name for saving data' },
           export: { type: 'boolean', description: 'Force export to JSON file' },
@@ -183,12 +199,12 @@ export const newsSentimentTool = {
         type: 'object',
         properties: {
           symbol: { type: 'string', description: 'Stock symbol' },
-          from: { type: 'string', description: 'Start date (YYYY-MM-DD)' },
-          to: { type: 'string', description: 'End date (YYYY-MM-DD)' },
+          from: { type: 'string', description: 'Start date in YYYY-MM-DD format (optional)' },
+          to: { type: 'string', description: 'End date in YYYY-MM-DD format (optional)' },
           project: { type: 'string', description: 'Project name for saving data' },
           export: { type: 'boolean', description: 'Force export to JSON file' },
         },
-        required: ['symbol', 'from', 'to'],
+        required: ['symbol'],
       },
     },
   ],

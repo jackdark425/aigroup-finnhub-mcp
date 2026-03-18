@@ -2,13 +2,16 @@ import { z } from 'zod';
 import * as ownership from '../api/endpoints/ownership.js';
 import { getLogger } from '../utils/logger.js';
 import { createSmartResult, createErrorResult, SymbolSchema, type ToolResult } from './_common.js';
+import { FinnhubError } from '../api/errors.js';
 
 const logger = getLogger('StockOwnershipTool');
 
+const DateStringSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format');
+
 const GetInsiderTransactionsSchema = z.object({
   symbol: SymbolSchema,
-  from: z.string(),
-  to: z.string(),
+  from: DateStringSchema.optional(),
+  to: DateStringSchema.optional(),
   project: z.string().optional(),
   export: z.boolean().optional(),
 });
@@ -27,8 +30,8 @@ const GetInstitutionalPortfolioSchema = z.object({
 
 const GetCongressTransactionsSchema = z.object({
   symbol: SymbolSchema.optional(),
-  from: z.string().optional(),
-  to: z.string().optional(),
+  from: DateStringSchema.optional(),
+  to: DateStringSchema.optional(),
   project: z.string().optional(),
   export: z.boolean().optional(),
 });
@@ -42,10 +45,16 @@ export async function getInsiderTransactions(args: unknown): Promise<ToolResult>
       project,
       export: forceExport,
       subdir: 'ownership',
-      filename: `${symbol.toLowerCase()}-insider-${from}-${to}.json`,
+      filename: `${symbol.toLowerCase()}-insider-${from ?? 'all'}-${to ?? 'all'}.json`,
     });
   } catch (error) {
-    logger.error('Error:', error);
+    logger.error('Error getting insider transactions:', error);
+    if (error instanceof z.ZodError) {
+      return createErrorResult(`Validation error: ${error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`);
+    }
+    if (error instanceof FinnhubError) {
+      return createErrorResult(`API error: ${error.message}`);
+    }
     return createErrorResult(error instanceof Error ? error.message : 'Unknown error');
   }
 }
@@ -55,6 +64,12 @@ export async function getInstitutionalOwnership(args: unknown): Promise<ToolResu
     const { symbol, project, export: forceExport } = GetInstitutionalOwnershipSchema.parse(args);
     logger.info(`Getting institutional ownership for ${symbol}`);
     const data = await ownership.getInstitutionalOwnership(symbol);
+    
+    // Check for empty data (institutional ownership often requires paid subscription)
+    if (!data || (Array.isArray(data) && data.length === 0) || (typeof data === 'object' && Object.keys(data).length === 0)) {
+      return createErrorResult('No institutional ownership data available for the specified criteria. Note: Institutional ownership data may require a paid Finnhub subscription.');
+    }
+    
     return createSmartResult(data, {
       project,
       export: forceExport,
@@ -62,7 +77,13 @@ export async function getInstitutionalOwnership(args: unknown): Promise<ToolResu
       filename: `${symbol.toLowerCase()}-institutional.json`,
     });
   } catch (error) {
-    logger.error('Error:', error);
+    logger.error('Error getting institutional ownership:', error);
+    if (error instanceof z.ZodError) {
+      return createErrorResult(`Validation error: ${error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`);
+    }
+    if (error instanceof FinnhubError) {
+      return createErrorResult(`API error: ${error.message}`);
+    }
     return createErrorResult(error instanceof Error ? error.message : 'Unknown error');
   }
 }
@@ -79,7 +100,13 @@ export async function getInstitutionalPortfolio(args: unknown): Promise<ToolResu
       filename: `portfolio-${cik}.json`,
     });
   } catch (error) {
-    logger.error('Error:', error);
+    logger.error('Error getting institutional portfolio:', error);
+    if (error instanceof z.ZodError) {
+      return createErrorResult(`Validation error: ${error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`);
+    }
+    if (error instanceof FinnhubError) {
+      return createErrorResult(`API error: ${error.message}`);
+    }
     return createErrorResult(error instanceof Error ? error.message : 'Unknown error');
   }
 }
@@ -93,10 +120,16 @@ export async function getCongressTransactions(args: unknown): Promise<ToolResult
       project,
       export: forceExport,
       subdir: 'ownership',
-      filename: `congress-${symbol?.toLowerCase() || 'all'}-${from || 'all'}-${to || 'all'}.json`,
+      filename: `congress-${symbol?.toLowerCase() ?? 'all'}-${from ?? 'all'}-${to ?? 'all'}.json`,
     });
   } catch (error) {
-    logger.error('Error:', error);
+    logger.error('Error getting congress transactions:', error);
+    if (error instanceof z.ZodError) {
+      return createErrorResult(`Validation error: ${error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`);
+    }
+    if (error instanceof FinnhubError) {
+      return createErrorResult(`API error: ${error.message}`);
+    }
     return createErrorResult(error instanceof Error ? error.message : 'Unknown error');
   }
 }
@@ -111,13 +144,13 @@ export const stockOwnershipTool = {
       parameters: {
         type: 'object',
         properties: {
-          symbol: { type: 'string' },
-          from: { type: 'string' },
-          to: { type: 'string' },
+          symbol: { type: 'string', description: 'Stock symbol' },
+          from: { type: 'string', description: 'Start date in YYYY-MM-DD format (optional)' },
+          to: { type: 'string', description: 'End date in YYYY-MM-DD format (optional)' },
           project: { type: 'string', description: 'Project name for saving data' },
           export: { type: 'boolean', description: 'Force export to JSON file' },
         },
-        required: ['symbol', 'from', 'to'],
+        required: ['symbol'],
       },
     },
     {
@@ -126,7 +159,7 @@ export const stockOwnershipTool = {
       parameters: {
         type: 'object',
         properties: {
-          symbol: { type: 'string' },
+          symbol: { type: 'string', description: 'Stock symbol' },
           project: { type: 'string', description: 'Project name for saving data' },
           export: { type: 'boolean', description: 'Force export to JSON file' },
         },
@@ -139,7 +172,7 @@ export const stockOwnershipTool = {
       parameters: {
         type: 'object',
         properties: {
-          cik: { type: 'string' },
+          cik: { type: 'string', description: 'CIK identifier' },
           project: { type: 'string', description: 'Project name for saving data' },
           export: { type: 'boolean', description: 'Force export to JSON file' },
         },
@@ -152,9 +185,9 @@ export const stockOwnershipTool = {
       parameters: {
         type: 'object',
         properties: {
-          symbol: { type: 'string' },
-          from: { type: 'string' },
-          to: { type: 'string' },
+          symbol: { type: 'string', description: 'Stock symbol (optional)' },
+          from: { type: 'string', description: 'Start date in YYYY-MM-DD format (optional)' },
+          to: { type: 'string', description: 'End date in YYYY-MM-DD format (optional)' },
           project: { type: 'string', description: 'Project name for saving data' },
           export: { type: 'boolean', description: 'Force export to JSON file' },
         },
