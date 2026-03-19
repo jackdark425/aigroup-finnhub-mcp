@@ -147,10 +147,11 @@ npm run test
 
 ## Acknowledgments
 
-This project was developed with reference to **cfdude/mcp-finnhub**:
+### Reference Project
 
-- Repository: https://github.com/cfdude/mcp-finnhub
-- Reference scope: overall project direction, MCP server structure, and interface organization
+- **cfdude/mcp-finnhub**
+  - Repository: https://github.com/cfdude/mcp-finnhub
+  - Reference scope: overall project direction, MCP server structure, and interface organization
 
 Thanks to **cfdude** for the prior open-source work that helped inform this implementation.
 
