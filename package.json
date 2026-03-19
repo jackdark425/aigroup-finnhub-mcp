@@ -1,8 +1,22 @@
 {
   "name": "aigroup-finnhub-mcp",
   "version": "1.2.1",
-  "description": "Node.js MCP server for Finnhub financial data API",
+  "description": "Finnhub market data MCP server for quotes, fundamentals, technical analysis, news sentiment, and crypto workflows.",
   "type": "module",
+  "author": {
+    "name": "AI Group",
+    "email": "jackdark425@gmail.com",
+    "url": "https://github.com/jackdark425"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jackdark425/aigroup-finnhub-mcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/jackdark425/aigroup-finnhub-mcp/issues"
+  },
+  "homepage": "https://github.com/jackdark425/aigroup-finnhub-mcp#readme",
   "main": "dist/index.js",
   "bin": {
     "aigroup-finnhub-mcp": "dist/index.js"
@@ -21,9 +35,21 @@
     "README.md",
     "LICENSE"
   ],
-  "keywords": ["mcp", "finnhub", "finance", "stocks", "api"],
-  "author": "",
-  "license": "MIT",
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "finnhub",
+    "finance",
+    "stocks",
+    "market-data",
+    "technical-analysis",
+    "news-sentiment",
+    "crypto",
+    "typescript"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "engines": {
     "node": ">=18.0.0"
   },
