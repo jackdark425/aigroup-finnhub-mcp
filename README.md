@@ -147,7 +147,12 @@ npm run test
 
 ## Acknowledgments
 
-This project was developed with reference to the MCP project work by **cfdude**. Many thanks for the prior ideas and implementation direction that helped shape this server.
+This project was developed with reference to **cfdude/mcp-finnhub**:
+
+- Repository: https://github.com/cfdude/mcp-finnhub
+- Reference scope: overall project direction, MCP server structure, and interface organization
+
+Thanks to **cfdude** for the prior open-source work that helped inform this implementation.
 
 ## License & Usage
 
