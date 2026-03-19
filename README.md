@@ -1,5 +1,7 @@
 # aigroup-finnhub-mcp
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
+
 Node.js implementation of the MCP (Model Context Protocol) server for Finnhub financial data API.
 
 ## Quick Start with npx
@@ -79,7 +81,7 @@ Add to your Claude Desktop config (`%APPDATA%\\Claude\\claude_desktop_config.jso
       "command": "npx",
       "args": ["-y", "aigroup-finnhub-mcp"],
       "env": {
-        "FINNHUB_API_KEY": "d6j77dpr01ql467igom0d6j77dpr01ql467igomg"
+        "FINNHUB_API_KEY": "your_finnhub_api_key_here"
       }
     }
   }
@@ -143,6 +145,16 @@ npm run lint
 npm run test
 ```
 
-## License
+## License & Usage
 
-MIT
+This project is released under the **MIT License**.
+
+You may use, copy, modify, merge, publish, distribute, sublicense, and sell copies of this software, including for commercial use, as long as the original copyright notice and license text are preserved.
+
+Please note:
+
+- the software is provided **"AS IS"**, without warranty of any kind
+- you must retain the license and copyright notice in copies or substantial portions of the software
+- usage of the **Finnhub API** remains subject to Finnhub's own terms of service, rate limits, and data licensing restrictions
+
+See the full text in [LICENSE](LICENSE).
