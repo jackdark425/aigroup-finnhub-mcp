@@ -145,6 +145,10 @@ npm run lint
 npm run test
 ```
 
+## Acknowledgments
+
+This project was developed with reference to the MCP project work by **cfdude**. Many thanks for the prior ideas and implementation direction that helped shape this server.
+
 ## License & Usage
 
 This project is released under the **MIT License**.
