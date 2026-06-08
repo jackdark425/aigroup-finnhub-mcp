@@ -7,6 +7,7 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 import { getConfig, isToolEnabled } from './config.js';
 import { getLogger } from './utils/logger.js';
+import { createRequire } from 'node:module';
 import * as stockMarketData from './tools/stock_market_data.js';
 import * as technicalAnalysis from './tools/technical_analysis.js';
 import * as newsSentiment from './tools/news_sentiment.js';
@@ -24,6 +25,8 @@ import * as projectList from './tools/project_list.js';
 import * as jobStatus from './tools/job_status.js';
 
 const logger = getLogger('Server');
+const require = createRequire(import.meta.url);
+const packageJson = require('../package.json') as { version: string };
 
 // Define all available tools with their handlers
 const toolRegistry: Record<string, { definition: Tool; handler: (args: unknown) => Promise<unknown> }> = {};
@@ -208,7 +211,7 @@ export function createServer(): Server {
   const server = new Server(
     {
       name: 'aigroup-finnhub-mcp',
-      version: '1.0.0',
+      version: packageJson.version,
     },
     {
       capabilities: {
